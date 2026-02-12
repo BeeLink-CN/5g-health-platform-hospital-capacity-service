@@ -1,4 +1,4 @@
-import { StringCodec, JSONCodec, consumerOpts } from 'nats';
+import { JSONCodec, consumerOpts } from 'nats';
 import { config } from '../config';
 import { getJetStream } from './index';
 import { processCapacityUpdate } from '../domain/ingestion';
@@ -31,6 +31,7 @@ export const startConsumer = async () => {
 
         for await (const m of sub) {
             try {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const data = jc.decode(m.data) as any;
                 const payload = data.payload || data;
 

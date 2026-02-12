@@ -1,24 +1,7 @@
-import { Queryable } from '../db';
-
-export interface Hospital {
-    id: string;
-    name: string;
-    city: string;
-    district?: string;
-    address?: string;
-    lat: number;
-    lon: number;
-    capabilities?: Record<string, unknown>;
-    updated_at?: Date;
-    // Current capacity cache
-    current_total_beds?: number;
-    current_available_beds?: number;
-    current_icu_total?: number;
-    current_icu_available?: number;
-    last_capacity_update?: Date;
-}
-
-export const upsertHospital = async (db: Queryable, hospital: Hospital) => {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getHospitalsForRecommendation = exports.listHospitals = exports.getHospital = exports.upsertHospital = void 0;
+const upsertHospital = async (db, hospital) => {
     const text = `
     INSERT INTO hospitals (id, name, city, district, address, lat, lon, capabilities, updated_at)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
@@ -46,20 +29,20 @@ export const upsertHospital = async (db: Queryable, hospital: Hospital) => {
     const { rows } = await db.query(text, values);
     return rows[0];
 };
-
-export const getHospital = async (db: Queryable, id: string) => {
+exports.upsertHospital = upsertHospital;
+const getHospital = async (db, id) => {
     const text = `SELECT * FROM hospitals WHERE id = $1`;
     const { rows } = await db.query(text, [id]);
     return rows[0] || null;
 };
-
-export const listHospitals = async (db: Queryable) => {
+exports.getHospital = getHospital;
+const listHospitals = async (db) => {
     const text = `SELECT * FROM hospitals ORDER BY name ASC`;
     const { rows } = await db.query(text);
     return rows;
 };
-
-export const getHospitalsForRecommendation = async (db: Queryable) => {
+exports.listHospitals = listHospitals;
+const getHospitalsForRecommendation = async (db) => {
     // We can filter by bounding box first for optimization if needed
     const text = `
         SELECT * FROM hospitals 
@@ -68,3 +51,4 @@ export const getHospitalsForRecommendation = async (db: Queryable) => {
     const { rows } = await db.query(text);
     return rows;
 };
+exports.getHospitalsForRecommendation = getHospitalsForRecommendation;

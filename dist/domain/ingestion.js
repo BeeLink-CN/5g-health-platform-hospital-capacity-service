@@ -1,51 +1,29 @@
-import { withTransaction } from '../db';
-import { upsertHospital } from './hospital';
-import { insertCapacitySnapshot, updateHospitalCapacityCache, CapacityUpdate } from './capacity';
-import { publishEvent } from '../nats';
-
-export const processCapacityUpdate = async (
-    hospitalData: {
-        id: string;
-        name: string;
-        city?: string;
-        district?: string;
-        address?: string;
-        lat: number;
-        lon: number;
-        capabilities?: Record<string, unknown>;
-    },
-    capacityData: {
-        total_beds: number;
-        available_beds: number;
-        icu_total: number;
-        icu_available: number;
-    },
-    meta: {
-        updated_at: string;
-        source: string;
-    }
-) => {
-    await withTransaction(async (client) => {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.processCapacityUpdate = void 0;
+const db_1 = require("../db");
+const hospital_1 = require("./hospital");
+const capacity_1 = require("./capacity");
+const nats_1 = require("../nats");
+const processCapacityUpdate = async (hospitalData, capacityData, meta) => {
+    await (0, db_1.withTransaction)(async (client) => {
         // 1. Upsert Hospital
-        const hospital = await upsertHospital(client, {
+        const hospital = await (0, hospital_1.upsertHospital)(client, {
             ...hospitalData,
             city: hospitalData.city || 'Unknown'
         });
-
         // 2. Insert Snapshot and Update Cache
         // Only if capacity data is provided (it usually is for this updates)
         if (capacityData) {
-            const updatePayload: CapacityUpdate = {
+            const updatePayload = {
                 hospital_id: hospitalData.id,
                 ...capacityData,
                 updated_at: meta.updated_at,
                 source: meta.source
             };
-
-            await insertCapacitySnapshot(client, updatePayload);
-            await updateHospitalCapacityCache(client, updatePayload);
+            await (0, capacity_1.insertCapacitySnapshot)(client, updatePayload);
+            await (0, capacity_1.updateHospitalCapacityCache)(client, updatePayload);
         }
-
         // 3. Publish Event (AFTER commit essentially, but we do it here. If commit fails, we might have published ghost event?
         // Ideally use outbox pattern. But for MVP, publishing here is acceptable risk, or published after transaction.
         // If we wait after transaction, we lose the 'atomic' feel if node crashes.
@@ -54,7 +32,6 @@ export const processCapacityUpdate = async (
         // Let's publish AFTER transaction succeeds.
         return hospital;
     });
-
     // 4. Publish Event
     const eventPayload = {
         hospital_id: hospitalData.id,
@@ -68,6 +45,6 @@ export const processCapacityUpdate = async (
         capacity: capacityData,
         source: "service:hospital-capacity"
     };
-
-    await publishEvent('hospital.capacity.updated', eventPayload);
+    await (0, nats_1.publishEvent)('hospital.capacity.updated', eventPayload);
 };
+exports.processCapacityUpdate = processCapacityUpdate;

@@ -13,16 +13,18 @@ pool.on('error', (err) => {
     process.exit(-1);
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const query = async (text: string, params?: any[]) => {
-    const start = Date.now();
+    // const start = Date.now();
     const res = await pool.query(text, params);
-    const duration = Date.now() - start;
+    // const duration = Date.now() - start;
     // logger.debug({ text, duration, rows: res.rowCount }, 'Executed query');
     return res;
 };
 
 // Generic query interface compatible with Pool and PoolClient
 export interface Queryable {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     query(text: string, params?: any[]): Promise<any>;
 }
 

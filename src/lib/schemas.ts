@@ -66,7 +66,7 @@ const loadRecursively = (dir: string) => {
     }
 };
 
-export const validate = (schemaId: string, data: any) => {
+export const validate = (schemaId: string, data: unknown) => {
     const validateFn = ajv.getSchema(schemaId);
     if (!validateFn) {
         throw new Error(`Schema ${schemaId} not found`);

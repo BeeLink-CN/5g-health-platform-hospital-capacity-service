@@ -1,40 +1,18 @@
-import { haversineDistance } from '../lib/geo';
-import { getHospitalsForRecommendation, Hospital } from './hospital';
-import { config } from '../config';
-import { pool } from '../db'; // Use pool for read queries
-
-export interface RecommendationParams {
-    lat: number;
-    lon: number;
-    radius_km?: number;
-    icu_required?: boolean;
-    min_available_beds?: number;
-    min_icu_available?: number;
-}
-
-export interface RecommendationResult {
-    items: Hospital[];
-    meta: {
-        excluded_stale_count: number;
-    };
-}
-
-interface HospitalWithDistance extends Hospital {
-    distance_km: number;
-}
-
-export const getRecommendations = async (params: RecommendationParams): Promise<RecommendationResult> => {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getRecommendations = void 0;
+const geo_1 = require("../lib/geo");
+const hospital_1 = require("./hospital");
+const config_1 = require("../config");
+const db_1 = require("../db"); // Use pool for read queries
+const getRecommendations = async (params) => {
     const radius = params.radius_km || 50; // default 50km
-
     // Get all hospitals with minimal filtering
-    const allHospitals = await getHospitalsForRecommendation(pool);
-
+    const allHospitals = await (0, hospital_1.getHospitalsForRecommendation)(db_1.pool);
     // Filter and sort in memory
     const now = new Date().getTime();
     let excludedStaleCount = 0;
-
-    const validHospitals: HospitalWithDistance[] = [];
-
+    const validHospitals = [];
     for (const h of allHospitals) {
         // 1. Staleness check
         if (!h.last_capacity_update) {
@@ -42,29 +20,30 @@ export const getRecommendations = async (params: RecommendationParams): Promise<
             continue;
         }
         const updateTime = new Date(h.last_capacity_update).getTime();
-        if (now - updateTime > config.capacityStaleMs) {
+        if (now - updateTime > config_1.config.capacityStaleMs) {
             excludedStaleCount++;
             continue;
         }
-
         // 2. ICU check
         if (params.icu_required) {
-            if (!h.current_icu_total || h.current_icu_total <= 0) continue;
-            if (params.min_icu_available && (h.current_icu_available || 0) < params.min_icu_available) continue;
-            if ((h.current_icu_available || 0) <= 0) continue;
+            if (!h.current_icu_total || h.current_icu_total <= 0)
+                continue;
+            if (params.min_icu_available && (h.current_icu_available || 0) < params.min_icu_available)
+                continue;
+            if ((h.current_icu_available || 0) <= 0)
+                continue;
         }
-
         // 3. Bed check
-        if (params.min_available_beds && (h.current_available_beds || 0) < params.min_available_beds) continue;
-        if ((h.current_available_beds || 0) <= 0 && !params.icu_required) continue;
-
+        if (params.min_available_beds && (h.current_available_beds || 0) < params.min_available_beds)
+            continue;
+        if ((h.current_available_beds || 0) <= 0 && !params.icu_required)
+            continue;
         // 4. Distance check
-        const dist = haversineDistance(params.lat, params.lon, h.lat, h.lon);
+        const dist = (0, geo_1.haversineDistance)(params.lat, params.lon, h.lat, h.lon);
         if (dist <= radius) {
             validHospitals.push({ ...h, distance_km: dist });
         }
     }
-
     // Sort
     // 1) availability (icu if required else beds) DESC
     // 2) distance_km ASC
@@ -72,23 +51,19 @@ export const getRecommendations = async (params: RecommendationParams): Promise<
     validHospitals.sort((a, b) => {
         const availabilityA = params.icu_required ? (a.current_icu_available || 0) : (a.current_available_beds || 0);
         const availabilityB = params.icu_required ? (b.current_icu_available || 0) : (b.current_available_beds || 0);
-
         // Primary sort: Availability Descending
         if (availabilityB !== availabilityA) {
             return availabilityB - availabilityA;
         }
-
         // Secondary sort: Distance Ascending
         if (a.distance_km !== b.distance_km) {
             return a.distance_km - b.distance_km;
         }
-
         // Tertiary sort: Last Update Descending
         const dateA = new Date(a.last_capacity_update || 0).getTime();
         const dateB = new Date(b.last_capacity_update || 0).getTime();
         return dateB - dateA;
     });
-
     return {
         items: validHospitals,
         meta: {
@@ -96,3 +71,4 @@ export const getRecommendations = async (params: RecommendationParams): Promise<
         }
     };
 };
+exports.getRecommendations = getRecommendations;

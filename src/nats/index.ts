@@ -1,9 +1,10 @@
-import { connect, NatsConnection, StringCodec, JSONCodec, JetStreamClient } from 'nats';
+import { connect, NatsConnection, JSONCodec, JetStreamClient } from 'nats';
+import crypto from 'crypto';
 import { config } from '../config';
 import { pino } from 'pino';
 
 const logger = pino({ level: config.logLevel });
-const sc = StringCodec();
+// const sc = StringCodec();
 const jc = JSONCodec();
 
 let nc: NatsConnection | undefined;
@@ -45,7 +46,7 @@ export const connectNats = async () => {
 export const getConnection = () => nc;
 export const getJetStream = () => js;
 
-export const publishEvent = async (subject: string, data: any) => {
+export const publishEvent = async (subject: string, data: unknown) => {
     if (!js) {
         logger.warn('JetStream not initialized, cannot publish');
         return;
