@@ -53,6 +53,11 @@ jobs:
         docker run -d --name nats -p 4222:4222 nats:2.10-alpine -js
         sleep 5
 
+    - name: Run Migrations
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/hospital_capacity
+      run: npm run migrate
+
     - name: Run Tests
       env:
         DATABASE_URL: postgres://postgres:postgres@localhost:5432/hospital_capacity
