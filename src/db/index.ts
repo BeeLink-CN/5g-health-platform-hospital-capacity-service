@@ -6,11 +6,11 @@ const logger = pino({ level: config.logLevel });
 
 export const pool = new Pool({
     connectionString: config.databaseUrl,
-    user: process.env.PGUSER || 'postgres',
-    password: process.env.PGPASSWORD || 'postgres',
-    database: process.env.PGDATABASE || 'hospital_capacity',
-    host: process.env.PGHOST || 'localhost',
-    port: process.env.PGPORT ? parseInt(process.env.PGPORT) : 5432
+    user: config.dbUser,
+    password: config.dbPassword,
+    database: config.dbName,
+    host: config.dbHost,
+    port: config.dbPort
 });
 
 pool.on('error', (err) => {
