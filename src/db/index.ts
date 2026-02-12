@@ -4,6 +4,18 @@ import { pino } from 'pino';
 
 const logger = pino({ level: config.logLevel });
 
+console.log('--- DB CONNECTION DEBUG ---');
+console.log('ENV PGUSER:', process.env.PGUSER);
+console.log('Config dbUser:', config.dbUser);
+console.log('Config connectionString:', config.databaseUrl);
+console.log('Resolved Pool Config:', {
+    user: config.dbUser,
+    host: config.dbHost,
+    database: config.dbName,
+    port: config.dbPort
+});
+console.log('---------------------------');
+
 export const pool = new Pool({
     connectionString: config.databaseUrl,
     user: config.dbUser,
