@@ -17,7 +17,6 @@ console.log('Resolved Pool Config:', {
 console.log('---------------------------');
 
 export const pool = new Pool({
-    connectionString: config.databaseUrl,
     user: config.dbUser,
     password: config.dbPassword,
     database: config.dbName,
