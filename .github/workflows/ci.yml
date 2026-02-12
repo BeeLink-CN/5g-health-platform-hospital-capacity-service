@@ -25,11 +25,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       
-      nats:
-        image: nats:2.10-alpine
-        ports:
-          - 4222:4222
-        options: "-js"
+
 
     steps:
     - uses: actions/checkout@v3
@@ -51,6 +47,11 @@ jobs:
 
     - name: Build
       run: npm run build
+
+    - name: Start NATS
+      run: |
+        docker run -d --name nats -p 4222:4222 nats:2.10-alpine -js
+        sleep 5
 
     - name: Run Tests
       env:
