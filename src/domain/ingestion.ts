@@ -2,6 +2,7 @@ import { withTransaction } from '../db';
 import { upsertHospital } from './hospital';
 import { insertCapacitySnapshot, updateHospitalCapacityCache, CapacityUpdate } from './capacity';
 import { publishEvent } from '../nats';
+import { validate } from '../lib/schemas';
 
 export const processCapacityUpdate = async (
     hospitalData: {
@@ -68,6 +69,11 @@ export const processCapacityUpdate = async (
         capacity: capacityData,
         source: "service:hospital-capacity"
     };
+
+    const errors = validate('https://5g-health-platform.com/schemas/events/hospital-capacity-updated.json', eventPayload);
+    if (errors) {
+        throw new Error(`Invalid outbound event: ${JSON.stringify(errors)}`);
+    }
 
     await publishEvent('hospital.capacity.updated', eventPayload);
 };

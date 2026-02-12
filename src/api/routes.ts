@@ -6,6 +6,7 @@ import { listHospitals, getHospital } from '../domain/hospital';
 import { getCapacityHistory } from '../domain/capacity';
 import { getRecommendations } from '../domain/recommendation';
 import { processCapacityUpdate } from '../domain/ingestion';
+import { validate } from '../lib/schemas';
 
 // Metric counters
 const metrics = {
@@ -120,10 +121,19 @@ export const registerRoutes = async (server: FastifyInstance) => {
         }
 
         metrics.updates_received++;
-        const body = req.body as {
+        const body = req.body as unknown; // Use unknown for validation first
+
+        const errors = validate('https://5g-health-platform.com/schemas/events/hospital-capacity-reported.json', body);
+        if (errors) {
+            metrics.dropped_invalid++;
+            reply.code(400);
+            return { error: 'Schema Validation Failed', details: errors };
+        }
+
+        const validBody = body as {
             hospital_id: string;
             name: string;
-            location?: { lat: number; lon: number };
+            location: { lat: number; lon: number };
             city?: string;
             district?: string;
             address?: string;
@@ -133,28 +143,22 @@ export const registerRoutes = async (server: FastifyInstance) => {
             source?: string;
         };
 
-        if (!body.hospital_id || !body.name || !body.location) {
-            metrics.dropped_invalid++;
-            reply.code(400);
-            return { error: 'Missing required fields: hospital_id, name, location' };
-        }
-
         try {
             await processCapacityUpdate(
                 {
-                    id: body.hospital_id,
-                    name: body.name,
-                    city: body.city,
-                    district: body.district,
-                    address: body.address,
-                    lat: body.location.lat,
-                    lon: body.location.lon,
-                    capabilities: body.capabilities
+                    id: validBody.hospital_id,
+                    name: validBody.name,
+                    city: validBody.city,
+                    district: validBody.district,
+                    address: validBody.address,
+                    lat: validBody.location.lat,
+                    lon: validBody.location.lon,
+                    capabilities: validBody.capabilities
                 },
-                body.capacity,
+                validBody.capacity,
                 {
-                    updated_at: body.updated_at || new Date().toISOString(),
-                    source: body.source || 'api'
+                    updated_at: validBody.updated_at || new Date().toISOString(),
+                    source: validBody.source || 'api'
                 }
             );
 
