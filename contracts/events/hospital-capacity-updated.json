@@ -1,0 +1,74 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://5g-health-platform.com/schemas/events/hospital-capacity-updated.json",
+    "title": "Hospital Capacity Updated",
+    "type": "object",
+    "properties": {
+        "hospital_id": {
+            "type": "string"
+        },
+        "name": {
+            "type": "string"
+        },
+        "location": {
+            "type": "object",
+            "properties": {
+                "lat": {
+                    "type": "number"
+                },
+                "lon": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "lat",
+                "lon"
+            ]
+        },
+        "city": {
+            "type": "string"
+        },
+        "updated_at": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "capacity": {
+            "type": "object",
+            "properties": {
+                "total_beds": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "available_beds": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "icu_total": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "icu_available": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            },
+            "required": [
+                "total_beds",
+                "available_beds",
+                "icu_total",
+                "icu_available"
+            ]
+        },
+        "source": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "hospital_id",
+        "name",
+        "location",
+        "city",
+        "updated_at",
+        "capacity"
+    ]
+}

@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  hospital-capacity-service:
+    build: .
+    ports:
+      - "8093:8093"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/hospital_capacity
+      - NATS_URL=nats://nats:4222
+      - NATS_STREAM=events
+      - NATS_DURABLE=hospital-capacity
+      - CONTRACTS_PATH=/usr/src/app/contracts
+      - LOG_LEVEL=debug
+      - NATS_REQUIRED=false
+    depends_on:
+      - postgres
+      - nats
+    networks:
+      - 5g-platform-network
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hospital_capacity
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - 5g-platform-network
+
+  nats:
+    image: nats:2.10-alpine
+    command: [ "-js" ]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    networks:
+      - 5g-platform-network
+
+networks:
+  5g-platform-network:
+    external: true
+
+volumes:
+  postgres_data:
