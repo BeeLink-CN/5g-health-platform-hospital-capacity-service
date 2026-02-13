@@ -19,6 +19,11 @@ describe('Integration API', () => {
     let server: FastifyInstance;
 
     beforeAll(async () => {
+        console.log('--- TEST DEBUG ---');
+        console.log('ENV PGUSER:', process.env.PGUSER);
+        console.log('ENV DB_USER:', process.env.DB_USER);
+        console.log('CONFIG dbUser:', config.dbUser);
+        console.log('------------------');
         server = Fastify();
         await registerRoutes(server);
         // Ensure DB tables exist (truncate)
