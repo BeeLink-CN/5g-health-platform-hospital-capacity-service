@@ -8,7 +8,7 @@ export const config = {
     nodeEnv: process.env.NODE_ENV || 'development',
     logLevel: process.env.LOG_LEVEL || 'info',
     databaseUrl: process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/hospital_capacity',
-    dbUser: (process.env.PGUSER && process.env.PGUSER !== 'root') ? process.env.PGUSER : 'postgres',
+    dbUser: process.env.DB_USER || (process.env.PGUSER && process.env.PGUSER !== 'root' ? process.env.PGUSER : 'postgres'),
     dbPassword: process.env.PGPASSWORD || 'postgres',
     dbHost: process.env.PGHOST || 'localhost',
     dbPort: process.env.PGPORT ? parseInt(process.env.PGPORT) : 5432,

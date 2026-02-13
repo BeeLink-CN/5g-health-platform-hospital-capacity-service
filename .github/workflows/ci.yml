@@ -64,4 +64,5 @@ jobs:
         PGDATABASE: hospital_capacity
         PGHOST: localhost
         PGPORT: 5432
+        DB_USER: postgres
       run: npm test
