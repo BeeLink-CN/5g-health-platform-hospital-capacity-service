@@ -19,13 +19,8 @@ describe('Integration API', () => {
     let server: FastifyInstance;
 
     const resetTables = async () => {
-        try {
-            await pool.query('DELETE FROM capacity_snapshots');
-            await pool.query('DELETE FROM hospitals');
-        } catch (error) {
-            console.error('Error resetting tables:', error);
-            throw error;
-        }
+        await pool.query('DELETE FROM capacity_snapshots');
+        await pool.query('DELETE FROM hospitals');
     };
 
     beforeAll(async () => {
