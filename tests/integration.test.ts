@@ -19,8 +19,13 @@ describe('Integration API', () => {
     let server: FastifyInstance;
 
     const resetTables = async () => {
-        await pool.query('DELETE FROM capacity_snapshots');
-        await pool.query('DELETE FROM hospitals');
+        try {
+            await pool.query('DELETE FROM capacity_snapshots');
+            await pool.query('DELETE FROM hospitals');
+        } catch (error) {
+            console.error('Error resetting tables:', error);
+            throw error;
+        }
     };
 
     beforeAll(async () => {
@@ -90,14 +95,14 @@ describe('Integration API', () => {
 
     test('GET /capacity/recommendation filters correctly and returns meta', async () => {
         await pool.query(`
-      INSERT INTO hospitals (id, name, city, lat, lon, last_capacity_update)
-      VALUES ('test-hosp-1', 'Test Hospital', 'Test City', 40.0, 30.0, NOW())
+      INSERT INTO hospitals (id, name, city, lat, lon, last_capacity_update, current_available_beds, current_total_beds)
+      VALUES ('test-hosp-1', 'Test Hospital', 'Test City', 40.0, 30.0, NOW(), 10, 100)
     `);
 
         // Seed another hospital far away
         await pool.query(`
-      INSERT INTO hospitals (id, name, city, lat, lon, last_capacity_update) 
-      VALUES ('far-hosp', 'Far', 'City', 50.0, 50.0, NOW())
+      INSERT INTO hospitals (id, name, city, lat, lon, last_capacity_update, current_available_beds, current_total_beds) 
+      VALUES ('far-hosp', 'Far', 'City', 50.0, 50.0, NOW(), 5, 50)
     `);
 
         // Near hospital is 'test-hosp-1' at 40,30.
@@ -124,17 +129,17 @@ describe('Integration API', () => {
 
     test('GET /capacity/recommendation exclusions', async () => {
         await pool.query(`
-        INSERT INTO hospitals (id, name, city, lat, lon, last_capacity_update)
-        VALUES ('test-hosp-1', 'Test Hospital', 'Test City', 40.0, 30.0, NOW())
-      `);
+      INSERT INTO hospitals (id, name, city, lat, lon, last_capacity_update, current_available_beds, current_total_beds)
+      VALUES ('test-hosp-1', 'Test Hospital', 'Test City', 40.0, 30.0, NOW(), 10, 100)
+    `);
 
         // Insert stale hospital
         // stale default is 10 mins (600000ms)
         // insert update 20 mins old
         await pool.query(`
-        INSERT INTO hospitals (id, name, city, lat, lon, last_capacity_update) 
-        VALUES ('stale-hosp', 'Stale', 'City', 40.05, 30.05, NOW() - INTERVAL '20 minutes')
-      `);
+      INSERT INTO hospitals (id, name, city, lat, lon, last_capacity_update, current_available_beds, current_total_beds) 
+      VALUES ('stale-hosp', 'Stale', 'City', 40.05, 30.05, NOW() - INTERVAL '20 minutes', 5, 50)
+    `);
 
         const response = await server.inject({
             method: 'GET',
