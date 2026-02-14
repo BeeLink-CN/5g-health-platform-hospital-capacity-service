@@ -18,6 +18,11 @@ import { publishEvent } from '../src/nats/index';
 describe('Integration API', () => {
     let server: FastifyInstance;
 
+    const resetTables = async () => {
+        await pool.query('DELETE FROM capacity_snapshots');
+        await pool.query('DELETE FROM hospitals');
+    };
+
     beforeAll(async () => {
         console.log('--- TEST DEBUG ---');
         console.log('ENV PGUSER:', process.env.PGUSER);
@@ -26,9 +31,11 @@ describe('Integration API', () => {
         console.log('------------------');
         server = Fastify();
         await registerRoutes(server);
-        // Ensure DB tables exist (truncate)
-        await pool.query('DELETE FROM capacity_snapshots');
-        await pool.query('DELETE FROM hospitals');
+        await resetTables();
+    });
+
+    beforeEach(async () => {
+        await resetTables();
     });
 
     afterAll(async () => {
@@ -82,6 +89,11 @@ describe('Integration API', () => {
     });
 
     test('GET /capacity/recommendation filters correctly and returns meta', async () => {
+        await pool.query(`
+      INSERT INTO hospitals (id, name, city, lat, lon, last_capacity_update)
+      VALUES ('test-hosp-1', 'Test Hospital', 'Test City', 40.0, 30.0, NOW())
+    `);
+
         // Seed another hospital far away
         await pool.query(`
       INSERT INTO hospitals (id, name, city, lat, lon, last_capacity_update) 
@@ -111,6 +123,11 @@ describe('Integration API', () => {
     });
 
     test('GET /capacity/recommendation exclusions', async () => {
+        await pool.query(`
+        INSERT INTO hospitals (id, name, city, lat, lon, last_capacity_update)
+        VALUES ('test-hosp-1', 'Test Hospital', 'Test City', 40.0, 30.0, NOW())
+      `);
+
         // Insert stale hospital
         // stale default is 10 mins (600000ms)
         // insert update 20 mins old
