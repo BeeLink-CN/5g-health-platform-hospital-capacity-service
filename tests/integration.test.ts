@@ -3,6 +3,7 @@ import Fastify from 'fastify';
 import { registerRoutes } from '../src/api/routes';
 import { pool } from '../src/db/index';
 import { config } from '../src/config';
+import { loadSchemas } from '../src/lib/schemas';
 
 // Mock NATS
 jest.mock('../src/nats/index', () => ({
@@ -29,6 +30,7 @@ describe('Integration API', () => {
         console.log('ENV DB_USER:', process.env.DB_USER);
         console.log('CONFIG dbUser:', config.dbUser);
         console.log('------------------');
+        loadSchemas();
         server = Fastify();
         await registerRoutes(server);
         await resetTables();
